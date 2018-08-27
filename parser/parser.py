@@ -106,22 +106,5 @@ cars = download_cars(base_url, pages, cache_file='cache/cars.json')
 specs = download_specs(base_url, cars, cache_file='cache/specs.json')
 params = download_params(base_url, specs, cache_file='cache/params.json')
 
-sorted_cars = sorted([(
-    [
-        str(p['value']) for p in car['specs'][0]['params']
-        if p['name'] == 'Prześwit'
-    ],
-    car['name'],
-) for car in params])
-
-fast_cars = sorted([(
-    [
-        [
-            str(p['value']) for p in spec['params']
-            if 'Przyspieszenie' in p['name']
-        ] for spec in car['specs']
-    ],
-    car['name'],
-) for car in params])
 
 print('Done!')
