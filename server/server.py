@@ -50,31 +50,34 @@ for car in data:
         spec_params = spec['params']
         all_params = dict([param_pair.values() for param_pair in spec_params])
         car_build = {
-            'transmission': all_params.get('Rodzaj skrzyni'),
-            'engine_type': all_params.get('Typ silnika'),
-            'engine_size': all_params.get('Pojemność skokowa'),
-            'engine_power': all_params.get('Moc silnika'),
-            'weight': all_params.get('Minimalna masa własna pojazdu (bez obciążenia)'),
-            'clearance': all_params.get('Prześwit'),
-            'acceleration': all_params.get('Przyspieszenie (od 0 do 100km/h)'),
-            'fuel_in_city': all_params.get('Spalanie w mieście'),
             'version': spec['name'],
             'transmission_name': all_params.get('Nazwa skrzyni'),
             'steps': all_params.get('Liczba stopni'),
             'gears': all_params.get('Liczba biegów'),
+            'transmission': all_params.get('Rodzaj skrzyni'),
+            'engine_type': all_params.get('Typ silnika'),
+            'engine_size': all_params.get('Pojemność skokowa'),
+            'engine_power': all_params.get('Moc silnika'),
             'engine_torque': all_params.get('Maksymalny moment obrotowy'),
             'engine_charged': all_params.get('Doładowanie'),
             'engine_cylinders': all_params.get('Liczba cylindrów'),
-            'wheel_drive': all_params.get('Rodzaj napędu'),
+            'weight': all_params.get('Minimalna masa własna pojazdu (bez obciążenia)'),
+            'length': all_params.get('Długość'),
+            'clearance': all_params.get('Prześwit'),
+            'acceleration': all_params.get('Przyspieszenie (od 0 do 100km/h)'),
             'max_speed': all_params.get('Prędkość maksymalna'),
+            'wheel_drive': all_params.get('Rodzaj napędu'),
+            'all_wheel_drive': all_params.get('Nazwa 4x4'),
+            'cargo_space': all_params.get('Minimalna pojemność bagażnika (siedzenia rozłożone)'),
+            'fuel_in_city': all_params.get('Spalanie w mieście'),
             'fuel_out_city': all_params.get('Spalanie w trasie (na autostradzie)'),
             'fuel_mixed': all_params.get('Średnie spalanie (cykl mieszany)'),
             'fuel_tank': all_params.get('Pojemność zbiornika paliwa'),
             'fuel_range_mixed': all_params.get('Zasięg (cykl mieszany)'),
+            'fuel_range_in_city': all_params.get('Zasięg (miasto)'),
+            'fuel_range_out_city': all_params.get('Zasięg (autostrada)'),
         }
         builds[car_name].append(car_build)
-
-print(builds)
 
 
 class Model(db.Model):
@@ -88,14 +91,51 @@ class Model(db.Model):
 class Build(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     model_id = db.Column(db.Integer, db.ForeignKey('model.id'), nullable=False)
-    model = db.Column('Model', backref=db.backref('builds', lazy=True))
+    model = db.relationship('Model', backref=db.backref('builds', lazy=True))
     version = db.Column(db.String(255), unique=True, nullable=False)
+    transmission_name = db.Column(db.String(255), nullable=True)
+    steps = db.Column(db.String(255), nullable=True)
+    gears = db.Column(db.String(255), nullable=True)
+    transmission = db.Column(db.String(255), nullable=True)
+    engine_type = db.Column(db.String(255), nullable=True)
+    engine_size = db.Column(db.String(255), nullable=True)
+    engine_power = db.Column(db.String(255), nullable=True)
+    engine_torque = db.Column(db.String(255), nullable=True)
+    engine_charged = db.Column(db.String(255), nullable=True)
+    engine_cylinders = db.Column(db.String(255), nullable=True)
+    weight = db.Column(db.String(255), nullable=True)
+    length = db.Column(db.String(255), nullable=True)
+    clearance = db.Column(db.String(255), nullable=True)
+    acceleration = db.Column(db.String(255), nullable=True)
+    max_speed = db.Column(db.String(255), nullable=True)
+    wheel_drive = db.Column(db.String(255), nullable=True)
+    all_wheel_drive = db.Column(db.String(255), nullable=True)
+    cargo_space = db.Column(db.String(255), nullable=True)
+    fuel_in_city = db.Column(db.String(255), nullable=True)
+    fuel_out_city = db.Column(db.String(255), nullable=True)
+    fuel_mixed = db.Column(db.String(255), nullable=True)
+    fuel_tank = db.Column(db.String(255), nullable=True)
+    fuel_range_mixed = db.Column(db.String(255), nullable=True)
+    fuel_range_in_city = db.Column(db.String(255), nullable=True)
+    fuel_range_out_city = db.Column(db.String(255), nullable=True)
 
     def __repr__(self):
         return f'{self.version}'
 
 
 db.create_all()
+
+
+for model_name in builds.keys():
+    model = Model.query.filter_by(name=model_name).first()
+    if not model:
+        model = Model(name=model_name)
+    for build_config in builds[model_name]:
+        build = Build.query.filter_by(version=build_config['version']).first()
+        if not build:
+            Build(model=model, **build_config)
+    db.session.add(model)
+    db.session.commit()
 
 
 @app.route('/')
